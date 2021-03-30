@@ -10,7 +10,7 @@ import doobie.util.transactor.Transactor
 import munit._
 import scala.concurrent.ExecutionContext
 
-trait CheckerChecks[M[_]] extends FunSuite with Checker[M] {
+trait CheckerChecks[M[_]] extends CatsEffectSuite with Checker[M] {
 
   implicit def contextShift: ContextShift[M]
 
@@ -20,13 +20,32 @@ trait CheckerChecks[M[_]] extends FunSuite with Checker[M] {
     "sa", ""
   )
 
+  test("munit cats-effect integration") { assertIO(IO(123), 123) }
+
   test("trivial") { check(sql"select 1".query[Int]) }
-  
+
   test("fail".fail) { check(sql"select 1".query[String]) }
 
   final case class Foo[F[_]](x: Int)
 
   test ("trivial case-class"){ check(sql"select 1".query[Foo[cats.Id]]) }
+
+  test("check is suspended") {
+    val _ = check(sql"select 1".query[String])
+    assert(true)
+  }
+
+  test("sequential queries") {
+    import cats.implicits._
+    check(sql"select 1".query[Int]) *> check(sql"select 1".query[Foo[cats.Id]]) 
+  }
+
+  test("failed sequential queries".fail) {
+    import cats.implicits._
+    val qs: List[M[Unit]] = (1 to 8).toList.map(i => check(sql"select $i".query[Int]))
+    val failure = check(sql"select 1".query[String])
+    (failure :: qs).sequence_
+  }
 
 }
 

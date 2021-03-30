@@ -17,6 +17,7 @@ lazy val refinedVersion       = "0.9.19"
 lazy val scalaCheckVersion    = "1.15.1"
 lazy val scalatestVersion     = "3.2.6"
 lazy val munitVersion         = "0.7.21"
+lazy val munitCEVersion         = "1.0.0"
 lazy val shapelessVersion     = "2.3.3"
 lazy val silencerVersion      = "1.7.1"
 lazy val specs2Version        = "4.10.6"
@@ -404,7 +405,8 @@ lazy val munit = project
     testFrameworks += new TestFramework("munit.Framework"),
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % munitVersion,
-      "com.h2database"  %  "h2"  % h2Version % "test"
+      "org.typelevel" %% "munit-cats-effect-2" % munitCEVersion % "test",
+      "com.h2database"%  "h2"                  % h2Version      % "test",
     )
   )
 

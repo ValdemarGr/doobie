@@ -32,10 +32,9 @@ import munit.Location
  * }}}
  */
 object analysisspec {
-
   trait Checker[M[_]] extends CheckerBase[M] { this: Assertions =>
 
-    def check[A: Analyzable](a: A)(implicit loc: Location) = checkImpl(Analyzable.unpack(a))
+    def check[A: Analyzable](a: A)(implicit loc: Location): M[Unit] = checkImpl(Analyzable.unpack(a))
 
     def checkOutput[A: TypeName](q: Query0[A])(implicit loc: Location) =
       checkImpl(AnalysisArgs(
@@ -47,14 +46,17 @@ object analysisspec {
         s"Query[${typeName[A]}, ${typeName[B]}]", q.pos, q.sql, q.outputAnalysis
       ))
 
-    private def checkImpl(args: AnalysisArgs)(implicit loc: Location) = {
-      val report = analyzeIO(args, transactor).unsafeRunSync()
-      if (!report.succeeded) {
-        fail(
-          formatReport(args, report, colors)
+    private def checkImpl(args: AnalysisArgs)(implicit loc: Location): M[Unit] = {
+      import doobie.implicits._
+      val report = analyze(args).transact(transactor)
+      Effect[M].flatMap(report){
+        case r if !r.succeeded => 
+          Effect[M].delay(fail(
+          formatReport(args, r, colors)
             .padLeft("  ")
             .toString
-        )
+        ))
+          case _ => Effect[M].unit
       }
     }
   }
