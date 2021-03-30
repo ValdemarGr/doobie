@@ -28,6 +28,11 @@ trait CheckerChecks[M[_]] extends FunSuite with Checker[M] {
 
   test ("trivial case-class"){ check(sql"select 1".query[Foo[cats.Id]]) }
 
+  test("suspended") {
+    val _ = check(sql"select 1".query[String])
+    assert(true)
+  }
+
 }
 
 class IOCheckerCheck extends CheckerChecks[IO] with IOChecker {
